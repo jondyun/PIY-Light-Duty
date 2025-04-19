@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Print Automation</title>
+</head>
+<body>
+    <h1>3D Print Automation</h1>
+    <input type="file" id="stlFile" accept=".stl">
+    <br><br>
+    <label for="layerHeight">Layer Height:</label>
+    <input type="number" id="layerHeight" value="0.2">
+    <br>
+    <label for="infill">Infill Percentage:</label>
+    <input type="number" id="infill" value="20">
+    <br><br>
+    <button id="slicePrintButton">Slice & Print</button>
+    <div id="status"></div>
+
+    <script>
+        document.getElementById('slicePrintButton').addEventListener('click', function() {
+            const file = document.getElementById('stlFile').files[0];
+            const layerHeight = document.getElementById('layerHeight').value;
+            const infill = document.getElementById('infill').value;
+
+            const formData = new FormData();
+            formData.append('stlFile', file);
+            formData.append('layerHeight', layerHeight);
+            formData.append('infill', infill);
+
+            fetch('/slice_and_print', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status').textContent = data.message;
+            })
+            .catch(error => {
+                document.getElementById('status').textContent = 'Error: ' + error;
+            });
+        });
+    </script>
+</body>
+</html>

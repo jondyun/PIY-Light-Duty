@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Slicer</title>
+</head>
+<body>
+    <h1>Upload STL to Slice</h1>
+    <form method="POST" action="/slice" enctype="multipart/form-data">
+        <input type="file" name="stlFile" required><br><br>
+        Layer Height: <input type="text" name="layerHeight" value="0.2"><br><br>
+        Infill: <input type="text" name="infill" value="20"><br><br>
+        <input type="submit" value="Slice">
+    </form>
+    <div id="result"></div>
+</body>
+</html>

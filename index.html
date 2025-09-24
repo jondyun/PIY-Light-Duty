@@ -1,44 +1,78 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>3D Print Automation</title>
+  <meta charset="utf-8" />
+  <title>PIY — Slice & Print</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- External CSS -->
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="icon" href="data:,">
 </head>
 <body>
-    <h1>3D Print Automation</h1>
-    <input type="file" id="stlFile" accept=".stl">
-    <br><br>
-    <label for="layerHeight">Layer Height:</label>
-    <input type="number" id="layerHeight" value="0.2">
-    <br>
-    <label for="infill">Infill Percentage:</label>
-    <input type="number" id="infill" value="20">
-    <br><br>
-    <button id="slicePrintButton">Slice & Print</button>
-    <div id="status"></div>
 
-    <script>
-        document.getElementById('slicePrintButton').addEventListener('click', function() {
-            const file = document.getElementById('stlFile').files[0];
-            const layerHeight = document.getElementById('layerHeight').value;
-            const infill = document.getElementById('infill').value;
+  <!-- ===== Zone 1: Header / Mode Banner ===== -->
+  <header>
+    <div class="head">
+      <div class="brand">
+        <div class="dot" title="Server running"></div>
+        <div>
+          <div style="font-weight:700">PIY — Print It Yourself</div>
+          <div class="subtitle">Local slicer • Browser UI</div>
+        </div>
+      </div>
 
-            const formData = new FormData();
-            formData.append('stlFile', file);
-            formData.append('layerHeight', layerHeight);
-            formData.append('infill', infill);
+      <div class="mode">
+        <span class="badge">LIVE</span>
+        <span id="modeText">Printer: ON (slice & auto-print)</span>
+      </div>
+    </div>
+  </header>
 
-            fetch('/slice_and_print', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('status').textContent = data.message;
-            })
-            .catch(error => {
-                document.getElementById('status').textContent = 'Error: ' + error;
-            });
-        });
-    </script>
+  <!-- ===== Zones 2–4: Main Content ===== -->
+  <main class="wrap">
+    <!-- Zone 2: Left — Job Form -->
+    <section class="card form" aria-label="Job form">
+      <h1>Slice & Print</h1>
+
+      <label for="stl">STL file</label>
+      <input id="stl" name="stlFile" type="file" accept=".stl" />
+
+      <div class="row">
+        <div>
+          <label for="layer">Layer height (mm)</label>
+          <input id="layer" name="layerHeight" type="number" step="0.01" value="0.2" />
+        </div>
+        <div>
+          <label for="infill">Infill (%)</label>
+          <input id="infill" name="infill" type="number" min="0" max="100" value="15" />
+        </div>
+      </div>
+
+      <button id="slicePrintBtn" class="btn-green">Slice & Print</button>
+      <div class="spacer"></div>
+      <button id="sliceBtn">Slice (download gcode)</button>
+    </section>
+
+    <!-- Zone 3: Center — Preview + Camera -->
+    <section class="card" aria-label="Preview and camera">
+      <h2>Model Preview</h2>
+      <div class="preview" id="previewBox">Preview (1:1)</div>
+
+      <div class="spacer"></div>
+      <h2>Camera</h2>
+      <div class="cam">
+        <img id="camImg" alt="Printer camera" src="" />
+      </div>
+    </section>
+
+    <!-- Zone 4: Right — Logs -->
+    <section class="card" aria-label="Logs">
+      <h2>Logs</h2>
+      <div class="logs" id="logs" aria-live="polite">Ready.</div>
+    </section>
+  </main>
+
+  <!-- External JS -->
+  <script src="/static/app.js" defer></script>
 </body>
 </html>

@@ -1,0 +1,8 @@
+# Ignore Cura app files
+Cura/
+*.pkg
+*.dmg
+*.DS_Store
+*.gcode
+*.stl
+docker/Dockerfile

@@ -21,8 +21,8 @@ def load_config() -> dict:
             "url": "http://192.168.0.11",
             "api_key": "19ac2a24eb354f8eb494665f0459d770"
         },
-        "prusaslicer": {
-            "executable": "/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/prusaslicer",
+        "superslicer": {
+            "executable": "/Applications/SuperSlicer.app/Contents/MacOS/SuperSlicer",
             "profile_ini": str(BASE_DIR / "config_LD2.ini")
         },
         "paths": {
@@ -35,7 +35,6 @@ def load_config() -> dict:
         try:
             with open(CONFIG_PATH, "r") as f:
                 user_cfg = json.load(f)
-            # shallow-merge
             for k, v in user_cfg.items():
                 if isinstance(v, dict) and k in cfg:
                     cfg[k].update(v)
@@ -44,11 +43,11 @@ def load_config() -> dict:
         except json.JSONDecodeError:
             print("WARN: config.json is not valid JSON; using defaults")
 
-    # Env overrides (optional)
+    # Env overrides
     cfg["moonraker"]["url"] = os.getenv("MOONRAKER_URL", cfg["moonraker"]["url"])
     cfg["moonraker"]["api_key"] = os.getenv("MOONRAKER_API_KEY", cfg["moonraker"]["api_key"])
-    cfg["prusaslicer"]["executable"] = os.getenv("PRUSASLICER_EXECUTABLE", cfg["prusaslicer"]["executable"])
-    cfg["prusaslicer"]["profile_ini"] = os.getenv("PRUSASLICER_PROFILE", cfg["prusaslicer"]["profile_ini"])
+    cfg["superslicer"]["executable"] = os.getenv("SUPERSLICER_EXECUTABLE", cfg["superslicer"]["executable"])
+    cfg["superslicer"]["profile_ini"] = os.getenv("SUPERSLICER_PROFILE", cfg["superslicer"]["profile_ini"])
     return cfg
 
 CFG = load_config()
@@ -64,12 +63,10 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 
 @app.get("/")
 def index():
-    """Serve the SPA shell (index.html placed next to app.py)."""
     return send_from_directory(str(BASE_DIR), "index.html")
 
 @app.get("/gcodes/<path:fname>")
 def serve_gcode(fname):
-    """Serve generated gcode files as downloads."""
     return send_from_directory(str(GCODE_DIR), fname, as_attachment=True)
 
 # ────────────────────────────────────────────────────────────────────
@@ -78,9 +75,6 @@ def serve_gcode(fname):
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("piy")
 
-# ────────────────────────────────────────────────────────────────────
-# Small response helpers
-# ────────────────────────────────────────────────────────────────────
 def ok(payload: dict, status: int = HTTPStatus.OK):
     return jsonify(payload), status
 
@@ -91,25 +85,26 @@ def fail(message: str, status: int = HTTPStatus.BAD_REQUEST, **extra):
     return jsonify(body), status
 
 # ────────────────────────────────────────────────────────────────────
-# Core helpers: slicing + printing
+# Core helpers
 # ────────────────────────────────────────────────────────────────────
-def run_prusaslicer(stl_path: Path, out_path: Path, layer: str, infill: str) -> tuple[bool, str]:
-    """Run PrusaSlicer on given STL to produce G-code."""
-    exe = CFG["prusaslicer"]["executable"]
-    profile = CFG["prusaslicer"]["profile_ini"]
+def run_superslicer(stl_path: Path, out_path: Path, layer: str, infill: str) -> tuple[bool, str]:
+    """Run SuperSlicer on given STL to produce G-code."""
+    exe = CFG["superslicer"]["executable"]
+    profile = CFG["superslicer"]["profile_ini"]
 
     if not Path(exe).exists():
-        return False, f"PrusaSlicer executable not found at: {exe}"
+        return False, f"SuperSlicer executable not found at: {exe}"
     if not Path(profile).exists():
-        return False, f"PrusaSlicer profile not found at: {profile}"
+        return False, f"SuperSlicer profile not found at: {profile}"
 
     cmd = [
         exe,
-        "--slice", str(stl_path),
-        "--output", str(out_path),
+        "--export-gcode",
+        "--load", profile,
         "--layer-height", str(layer),
         "--fill-density", f"{infill}%",
-        "--load", profile,
+        "-o", str(out_path),
+        str(stl_path),
     ]
     logger.info("Running slicer: %s", " ".join(cmd))
     run = subprocess.run(
@@ -125,7 +120,6 @@ def run_prusaslicer(stl_path: Path, out_path: Path, layer: str, infill: str) -> 
     return True, (run.stdout or "").strip()
 
 def upload_and_print_moonraker(gcode_path: Path) -> tuple[bool, str]:
-    """Upload G-code to Moonraker and start printing."""
     url = CFG["moonraker"]["url"].rstrip("/")
     api_key = CFG["moonraker"]["api_key"]
     headers = {"X-Api-Key": api_key} if api_key else {}
@@ -135,8 +129,6 @@ def upload_and_print_moonraker(gcode_path: Path) -> tuple[bool, str]:
 
     filename = gcode_path.name
 
-    # Upload
-    logger.info("Uploading '%s' to Moonraker @ %s", filename, url)
     try:
         with open(gcode_path, "rb") as fh:
             files = {"file": (filename, fh, "application/octet-stream")}
@@ -151,7 +143,6 @@ def upload_and_print_moonraker(gcode_path: Path) -> tuple[bool, str]:
     except requests.RequestException as e:
         return False, f"Upload error: {e}"
 
-    # Start print (try short then full path)
     candidates = [filename, f"gcodes/{filename}"]
     for cand in candidates:
         try:
@@ -164,69 +155,51 @@ def upload_and_print_moonraker(gcode_path: Path) -> tuple[bool, str]:
             pr.raise_for_status()
             logger.info("Print started with filename='%s'.", cand)
             return True, f"Print started ({cand})"
-        except requests.HTTPError as e:
-            try:
-                logger.warning("HTTPError body: %s", e.response.text)
-            except Exception:
-                pass
-            logger.warning("Start failed for '%s': %s", cand, e)
         except requests.RequestException as e:
             logger.warning("Start failed for '%s': %s", cand, e)
 
     return False, f"Unable to start print; tried {candidates}"
 
 # ────────────────────────────────────────────────────────────────────
-# Routes: Slice & Print, Slice only (download)
+# Routes
 # ────────────────────────────────────────────────────────────────────
 @app.post("/slice_and_print")
 def slice_and_print():
-    """Upload STL → slice → upload to Moonraker → start print."""
     stl = request.files.get("stlFile")
     layer = request.form.get("layerHeight")
     infill = request.form.get("infill")
     if not stl or not layer or not infill:
         return fail("Missing stlFile, layerHeight, or infill")
 
-    # Paths
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     out_name = f"sliced_{ts}.gcode"
     out_path = BASE_DIR / out_name
 
-    # Save temp STL
-    TEMP_STL_PATH.write_bytes(b"")  # ensure file exists
+    TEMP_STL_PATH.write_bytes(b"")
     stl.save(TEMP_STL_PATH)
 
-    # Slice
     logger.info("Slicing → %s", out_path)
     try:
-        sliced, msg = run_prusaslicer(TEMP_STL_PATH, out_path, layer, infill)
+        sliced, msg = run_superslicer(TEMP_STL_PATH, out_path, layer, infill)
     finally:
-        # Cleanup temp STL regardless
         try:
             TEMP_STL_PATH.unlink(missing_ok=True)
         except Exception:
             logger.warning("Temp STL cleanup failed", exc_info=True)
 
     if not sliced:
-        logger.error("Slicing failed: %s", msg)
         return fail("Slicing failed", HTTPStatus.INTERNAL_SERVER_ERROR, details=msg)
     if not out_path.exists():
-        logger.error("Slicing reported success but output not found: %s", out_path)
         return fail("Slicing produced no output", HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    # Upload + start
-    logger.info("Uploading & starting print: %s", out_name)
     started, pmsg = upload_and_print_moonraker(out_path)
     if not started:
-        logger.error("Print start failed: %s", pmsg)
         return fail("Print start failed", HTTPStatus.BAD_GATEWAY, details=pmsg)
 
-    logger.info("✅ Print started: %s", out_name)
     return ok({"message": "Print started", "gcode": out_name})
 
 @app.post("/api/slice")
 def api_slice_only():
-    """Upload STL → slice → provide browser download link."""
     stl = request.files.get("stlFile")
     layer = request.form.get("layerHeight")
     infill = request.form.get("infill")
@@ -238,13 +211,11 @@ def api_slice_only():
     out_path = GCODE_DIR / out_name
     temp_stl = BASE_DIR / "temp_slice_input.stl"
 
-    # Save temp STL
     temp_stl.write_bytes(b"")
     stl.save(temp_stl)
 
-    # Slice
     try:
-        sliced, msg = run_prusaslicer(temp_stl, out_path, layer, infill)
+        sliced, msg = run_superslicer(temp_stl, out_path, layer, infill)
         if not sliced or not out_path.exists():
             return fail("Slicing failed", HTTPStatus.INTERNAL_SERVER_ERROR, stderr=msg)
         return ok({
@@ -258,8 +229,5 @@ def api_slice_only():
         except Exception:
             logger.warning("Temp STL cleanup failed", exc_info=True)
 
-# ────────────────────────────────────────────────────────────────────
-# Main
-# ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(debug=bool(CFG["app"].get("debug", True)))

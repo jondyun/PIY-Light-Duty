@@ -1,0 +1,20 @@
+# Ignore generated G-code and STL files
+*.gcode
+*.stl
+
+# Ignore temp files
+temp*.stl
+temp*.gcode
+
+# Ignore output folders
+gcodes/
+
+# Optional: ignore Python cache
+__pycache__/
+*.pyc
+
+# Optional: ignore logs
+*.log
+
+# Optional: macOS artifacts
+.DS_Store

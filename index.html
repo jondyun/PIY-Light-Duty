@@ -4,13 +4,12 @@
   <meta charset="utf-8" />
   <title>PIY — Slice & Print</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- External CSS -->
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="icon" href="data:,">
 </head>
 <body>
 
-  <!-- ===== Zone 1: Header / Mode Banner ===== -->
+  <!-- ===== Header ===== -->
   <header>
     <div class="head">
       <div class="brand">
@@ -28,9 +27,9 @@
     </div>
   </header>
 
-  <!-- ===== Zones 2–4: Main Content ===== -->
+  <!-- ===== Main Content ===== -->
   <main class="wrap">
-    <!-- Zone 2: Left — Job Form -->
+    <!-- Job Form -->
     <section class="card form" aria-label="Job form">
       <h1>Slice & Print</h1>
 
@@ -53,26 +52,13 @@
       <button id="sliceBtn">Slice (download gcode)</button>
     </section>
 
-    <!-- Zone 3: Center — Preview + Camera -->
-    <section class="card" aria-label="Preview and camera">
-      <h2>Model Preview</h2>
-      <div class="preview" id="previewBox">Preview (1:1)</div>
-
-      <div class="spacer"></div>
-      <h2>Camera</h2>
-      <div class="cam">
-        <img id="camImg" alt="Printer camera" src="" />
-      </div>
-    </section>
-
-    <!-- Zone 4: Right — Logs -->
+    <!-- Logs -->
     <section class="card" aria-label="Logs">
       <h2>Logs</h2>
       <div class="logs" id="logs" aria-live="polite">Ready.</div>
     </section>
   </main>
 
-  <!-- External JS -->
   <script src="/static/app.js" defer></script>
 </body>
 </html>

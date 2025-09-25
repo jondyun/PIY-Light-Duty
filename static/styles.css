@@ -11,7 +11,7 @@ body{
   background:linear-gradient(180deg,#0a0f1d,#0b1020 40%,#0b1224);
 }
 
-/* ===== Header (Zone 1) ===== */
+/* Header */
 header{
   position:sticky; top:0; z-index:2;
   backdrop-filter: blur(6px);
@@ -33,17 +33,18 @@ header{
 }
 .badge{padding:2px 8px; border-radius:999px; font-weight:600; background:#0b1328; border:1px solid var(--border);}
 
-/* ===== Main Grid (Zones 2–4) ===== */
+/* Main Grid */
 .wrap{
   max-width:1200px; margin:20px auto; padding:0 var(--gap) var(--gap);
   display:grid; gap:var(--gap);
-  grid-template-columns: 3fr 5fr 4fr; /* Left / Center / Right */
+  grid-template-columns: 1fr 1fr; /* Form / Logs */
   grid-auto-rows: min-content;
 }
 @media (max-width: 980px){
   .wrap{grid-template-columns:1fr}
 }
 
+/* Cards */
 .card{
   background:linear-gradient(180deg,#0f172a,#0c152a);
   border:1px solid var(--border);
@@ -53,7 +54,7 @@ header{
 h1,h2{margin:0 0 10px}
 h1{font-size:20px} h2{font-size:16px;color:var(--muted)}
 
-/* ===== Zone 2: Left — Form ===== */
+/* Form */
 .form label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}
 .form input,.form select,.form button{
   width:100%; padding:10px 12px; border-radius:10px;
@@ -72,15 +73,7 @@ h1{font-size:20px} h2{font-size:16px;color:var(--muted)}
 .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
 @media (max-width: 480px){ .row{grid-template-columns:1fr} }
 
-/* ===== Zone 3: Center — Preview + Camera ===== */
-.preview, .cam{
-  border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#0b1328;
-}
-.preview{ aspect-ratio: 1 / 1; display:grid; place-items:center; color:var(--muted); }
-.cam{ aspect-ratio: 16 / 9; }
-.cam media, .cam img, .cam video{ width:100%; height:100%; object-fit:cover; display:block }
-
-/* ===== Zone 4: Right — Logs ===== */
+/* Logs */
 .logs{
   background:#0b1220; border:1px solid var(--border);
   border-radius:12px; padding:12px; font:12px/1.4 var(--mono);

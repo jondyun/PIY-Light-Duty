@@ -17,3 +17,8 @@ env/
 # Logs
 *.log
 
+# .gitignore
+*.gcode
+*.stl
+*.pyc
+__pycache__/

@@ -1,20 +1,19 @@
-# Ignore generated G-code and STL files
+# macOS system files
+.DS_Store
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environment (if you ever use one)
+venv/
+env/
+
+# SuperSlicer / STL / G-code files
 *.gcode
 *.stl
+*.ini
 
-# Ignore temp files
-temp*.stl
-temp*.gcode
-
-# Ignore output folders
-gcodes/
-
-# Optional: ignore Python cache
-__pycache__/
-*.pyc
-
-# Optional: ignore logs
+# Logs
 *.log
 
-# Optional: macOS artifacts
-.DS_Store
